@@ -7,9 +7,28 @@ let options = CSVReadingOptions(hasHeaderRow: true, delimiter: ",")
 
 let formattingOptions = FormattingOptions(maximumLineWidth: 250, maximumCellWidth: 250, maximumRowCount: 100, includesColumnTypes: true)
 
-let dataFrame = try DataFrame(contentsOfCSVFile: fileURL, options: options)
-print(dataFrame.description(options: formattingOptions))
+let calendar = Calendar.current
+let currentYear = calendar.component(.year, from: Date())
 
-let regressor = try MLRegressor(trainingData: dataFrame, targetColumn: "Price")
+let dataFrame = try DataFrame(contentsOfCSVFile: fileURL, options: options)
+//print(dataFrame.description(options: formattingOptions))
+
+let dataSliceUnder60KMiles = dataFrame.filter(on: "Miles", Int.self) { miles in
+    guard let miles else { return false }
+    return miles <= 60000
+}
+let dataSliceLessThan5YearsOld = dataSliceUnder60KMiles.filter(on: "Year", Int.self) { year in
+    guard let year else { return false }
+    return currentYear - year >= 0 && currentYear - year <= 5
+}
+let dataSliceHondaAndToyota = dataSliceLessThan5YearsOld.filter(on: "Name", String.self) { name in
+    guard let name else { return false }
+    return name.contains("Toyota") || name.contains("Honda")
+}
+print(dataSliceHondaAndToyota.description(options: formattingOptions))
+
+let carvanaDataFrame = DataFrame(dataSliceHondaAndToyota)
+
+let regressor = try MLRegressor(trainingData: carvanaDataFrame, targetColumn: "Price")
 let metaData = MLModelMetadata(author: "Joe", shortDescription: "Carvana Model", version: "1.0")
 try regressor.write(toFile: "/Users/joe/Downloads/carvana.mlmodel", metadata: metaData)

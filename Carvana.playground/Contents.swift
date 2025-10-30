@@ -31,4 +31,19 @@ let carvanaDataFrame = DataFrame(dataSliceHondaAndToyota)
 
 let regressor = try MLRegressor(trainingData: carvanaDataFrame, targetColumn: "Price")
 let metaData = MLModelMetadata(author: "Joe", shortDescription: "Carvana Model", version: "1.0")
-try regressor.write(toFile: "/Users/joe/Downloads/carvana.mlmodel", metadata: metaData)
+//try regressor.write(toFile: "/Users/joe/Downloads/carvana.mlmodel", metadata: metaData)
+
+let nameDataFrame = carvanaDataFrame.selecting(columnNames: ["Name"])
+let nameColumnSlice = nameDataFrame["Name"].distinct()
+let uniqueNames: [String] = nameColumnSlice.compactMap { ($0 as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+//print(uniqueNames)
+
+let nameColumn = Column(name: "name", contents: uniqueNames)
+//print(nameColumn)
+var uniqueNameDataFrame = DataFrame()
+uniqueNameDataFrame.append(column: nameColumn)
+print(uniqueNameDataFrame)
+
+// write to a JSON file
+try uniqueNameDataFrame.writeJSON(to: URL(filePath: "/Users/joe/Downloads/CarNames.json"))
